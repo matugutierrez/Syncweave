@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - DATA_DIR=/data
+      - JWT_SECRET=local-dev-secret
+      - CORS_ORIGIN=http://localhost:5173
+    volumes:
+      - syncweave-data:/data
+
+volumes:
+  syncweave-data:

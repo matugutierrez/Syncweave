@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #0b0f1a;
+  color: #e7ecf5;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.editor-block:focus {
+  outline: none;
+}
+
+.remote-cursor {
+  position: absolute;
+  width: 2px;
+  height: 1.2em;
+  pointer-events: none;
+  transition: transform 0.08s linear;
+}
+
+.remote-cursor::after {
+  content: attr(data-name);
+  position: absolute;
+  top: -1.3em;
+  left: 0;
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  white-space: nowrap;
+  color: white;
+}
