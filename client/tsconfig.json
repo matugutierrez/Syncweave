@@ -8,10 +8,10 @@
     "types": ["vite/client"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@syncweave/crdt": ["../packages/crdt/src/index.ts"]
     },
     "noEmit": true
   },
-  "references": [{ "path": "../packages/crdt" }],
   "include": ["src"]
 }

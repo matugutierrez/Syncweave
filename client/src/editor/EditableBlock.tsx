@@ -65,27 +65,26 @@ export function EditableBlock({
     onCaret(blockId, getCaret(el) ?? 0)
   }
 
-  const Tag = type === "heading" ? "h2" : "p"
+  const isHeading = type === "heading"
+  const handleCaret = () => {
+    const el = ref.current
+    if (el) onCaret(blockId, getCaret(el) ?? 0)
+  }
 
   return (
-    <Tag
-      // @ts-expect-error — contentEditable on a dynamic tag
+    <div
       ref={ref}
-      className={`editor-block px-1 py-0.5 leading-relaxed ${
-        type === "heading" ? "text-2xl font-semibold" : "text-base"
+      role="textbox"
+      aria-multiline="true"
+      className={`editor-block px-1 py-0.5 leading-relaxed outline-none ${
+        isHeading ? "text-2xl font-semibold" : "text-base"
       }`}
       contentEditable
       suppressContentEditableWarning
       data-block-id={blockId}
       onInput={handleInput}
-      onKeyUp={() => {
-        const el = ref.current
-        if (el) onCaret(blockId, getCaret(el) ?? 0)
-      }}
-      onClick={() => {
-        const el = ref.current
-        if (el) onCaret(blockId, getCaret(el) ?? 0)
-      }}
+      onKeyUp={handleCaret}
+      onClick={handleCaret}
     />
   )
 }

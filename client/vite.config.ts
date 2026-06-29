@@ -7,6 +7,10 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@syncweave/crdt": path.resolve(
+        __dirname,
+        "../packages/crdt/src/index.ts",
+      ),
     },
   },
   server: {
