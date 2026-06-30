@@ -56,8 +56,7 @@ export function useSyncWeave(room: string, userName: string): UseSyncWeave {
       setRevision((r) => r + 1)
     })
 
-    const token = localStorage.getItem("syncweave-token") ?? undefined
-    const provider = new WebsocketProvider(room, doc, awareness, token)
+    const provider = new WebsocketProvider(room, doc, awareness, userName)
     providerRef.current = provider
     const offStatus = provider.onStatus(setStatus)
     const offDoc = doc.onChange(() => setRevision((r) => r + 1))

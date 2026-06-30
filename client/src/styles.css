@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --bg: #0b0f1a;
-  --bg-panel: #11162a;
-  --bg-hover: #1a2040;
-  --text: #e7ecf5;
-  --text-muted: #8892a8;
-  --border: #1e2844;
+  --bg: #1a1a1a;
+  --bg-panel: #242424;
+  --bg-hover: #2e2e2e;
+  --text: #e5e5e5;
+  --text-muted: #888888;
+  --border: #333333;
   --accent: #3b82f6;
   --accent-hover: #2563eb;
   --danger: #ef4444;
@@ -17,33 +17,47 @@
 }
 
 .light {
-  --bg: #f8f9fc;
+  --bg: #f8f8f8;
   --bg-panel: #ffffff;
-  --bg-hover: #f1f3f8;
-  --text: #1a1d2e;
-  --text-muted: #6b7280;
-  --border: #e5e7eb;
-  --accent: #3b82f6;
-  --accent-hover: #2563eb;
+  --bg-hover: #f0f0f0;
+  --text: #1a1a1a;
+  --text-muted: #888888;
+  --border: #e0e0e0;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
   --danger: #dc2626;
   --success: #16a34a;
   color-scheme: light;
 }
 
+html {
+  background: var(--bg);
+}
+
 html, body, #root {
   height: 100%;
+  margin: 0;
 }
 
 body {
-  margin: 0;
   background: var(--bg);
   color: var(--text);
   font-family: Inter, system-ui, sans-serif;
-  transition: background-color 0.2s, color 0.2s;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: var(--accent);
+  color: white;
 }
 
 .editor-block:focus {
   outline: none;
+}
+
+.editor-block::selection {
+  background: rgba(59, 130, 246, 0.3);
 }
 
 .remote-cursor {
@@ -62,20 +76,26 @@ body {
   left: 0;
   font-size: 10px;
   padding: 1px 4px;
-  border-radius: 4px;
+  border-radius: 3px;
   white-space: nowrap;
   color: white;
+  line-height: 1.2;
 }
 
 .remote-selection {
   position: absolute;
   pointer-events: none;
-  opacity: 0.3;
+  opacity: 0.25;
   border-radius: 2px;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -83,45 +103,19 @@ body {
   animation: fadeIn 0.15s ease-out;
 }
 
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
 .animate-slide-up {
   animation: slideUp 0.2s ease-out;
 }
 
 @keyframes pulse-soft {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.8; }
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
 }
 
 .animate-pulse-soft {
   animation: pulse-soft 1.5s ease-in-out infinite;
 }
 
-.slash-menu {
-  animation: slideUp 0.12s ease-out;
-}
-
-.slash-menu-item {
-  transition: background 0.08s;
-}
-
-.slash-menu-item:hover {
-  background: var(--bg-hover);
-}
-
-.slash-menu-item.selected {
-  background: var(--accent);
-  color: white;
-}
-
-.toast-enter {
-  animation: slideUp 0.2s ease-out;
-}
-
-.toast-exit {
-  animation: fadeIn 0.15s ease-out reverse;
+input::placeholder {
+  color: var(--text-muted);
 }

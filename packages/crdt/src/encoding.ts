@@ -3,7 +3,7 @@ import type { Operation } from "./operations"
 import type { PresenceState } from "./awareness"
 
 export type Message =
-  | { t: "hello"; room: string; token?: string }
+  | { t: "hello"; room: string; name?: string }
   | { t: "sync-request"; room: string; vv: Record<ClientID, number> }
   | { t: "sync-response"; ops: Operation[]; vv: Record<ClientID, number> }
   | { t: "ops"; ops: Operation[] }

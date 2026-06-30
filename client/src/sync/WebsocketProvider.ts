@@ -36,7 +36,7 @@ export class WebsocketProvider {
     private readonly room: string,
     private readonly doc: CRDTDocument,
     private readonly awareness: Awareness,
-    private readonly token?: string,
+    private readonly name: string = "Anonymous",
   ) {
     // Capture every local op for sending (and offline queueing).
     this.doc.onChange((ops) => {
@@ -60,7 +60,7 @@ export class WebsocketProvider {
 
     socket.onopen = () => {
       this.backoff = 500
-      this.send({ t: "hello", room: this.room, token: this.token })
+      this.send({ t: "hello", room: this.room, name: this.name })
       this.send({
         t: "sync-request",
         room: this.room,

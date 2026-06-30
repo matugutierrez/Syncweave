@@ -2,15 +2,11 @@ import { useCallback, useEffect, useState } from "react"
 
 export type Route =
   | { page: "dashboard" }
-  | { page: "login" }
-  | { page: "register" }
   | { page: "editor"; room: string }
 
 function parseHash(): Route {
-  const hash = window.location.hash.replace(/^#\//, "")
+  const hash = window.location.hash.replace(/^#\/?/, "")
   if (!hash || hash === "dashboard") return { page: "dashboard" }
-  if (hash === "login") return { page: "login" }
-  if (hash === "register") return { page: "register" }
   return { page: "editor", room: hash }
 }
 
@@ -24,7 +20,7 @@ export function useRouter() {
   }, [])
 
   const navigate = useCallback((path: string) => {
-    window.location.hash = path
+    window.location.hash = path ? `/${path}` : ""
   }, [])
 
   return { route, navigate }

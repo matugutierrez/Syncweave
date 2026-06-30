@@ -6,7 +6,6 @@ import { Layout } from "@/components/Layout"
 import { ToastContainer } from "@/components/Toast"
 import { WelcomeScreen } from "@/components/WelcomeScreen"
 import { ShareDialog } from "@/components/ShareDialog"
-import { Skeleton } from "@/components/Skeleton"
 import { EditableBlock } from "@/editor/EditableBlock"
 import { BlockHandle } from "@/editor/BlockHandle"
 import { BlockAdder } from "@/editor/BlockAdder"
@@ -15,19 +14,17 @@ import { Avatars } from "@/presence/Avatars"
 import { Toolbar } from "@/components/Toolbar"
 import { StatusBar } from "@/components/StatusBar"
 import { Dashboard } from "@/pages/Dashboard"
-import { Login } from "@/pages/Login"
-import { Register } from "@/pages/Register"
 import { toMarkdown, toHtml } from "@/lib/export"
 import { useToast } from "@/lib/toast"
 
 function RoomEditor({ room }: { room: string }) {
-  const ADD_TOAST = useToast((s) => s.add)
+  const addToast = useToast((s) => s.add)
   const [name] = useState(() => `User ${Math.floor(Math.random() * 1000)}`)
-  const { doc, awareness, undo, status, revision } = useSyncWeave(room, name)
+  const { doc, awareness, undo, status } = useSyncWeave(room, name)
   const [showShare, setShowShare] = useState(false)
   const [showWelcome, setShowWelcome] = useState(false)
 
-  const blocks = useMemo(() => doc.childrenOf("root"), [doc, revision])
+  const blocks = useMemo(() => doc.childrenOf("root"), [doc, undo])
 
   const handleCaret = useCallback(
     (blockId: string, caret: number) => {
@@ -89,8 +86,8 @@ function RoomEditor({ room }: { room: string }) {
     a.download = `${room}.md`
     a.click()
     URL.revokeObjectURL(url)
-    ADD_TOAST("Exported as Markdown", "success")
-  }, [blocks, room, ADD_TOAST])
+    addToast("Exported as Markdown", "success")
+  }, [blocks, room, addToast])
 
   const handleExportHtml = useCallback(() => {
     const html = toHtml(blocks)
@@ -101,8 +98,8 @@ function RoomEditor({ room }: { room: string }) {
     a.download = `${room}.html`
     a.click()
     URL.revokeObjectURL(url)
-    ADD_TOAST("Exported as HTML", "success")
-  }, [blocks, room, ADD_TOAST])
+    addToast("Exported as HTML", "success")
+  }, [blocks, room, addToast])
 
   if (blocks.length === 0 && status !== "connecting") {
     setShowWelcome(true)
@@ -131,7 +128,7 @@ function RoomEditor({ room }: { room: string }) {
               HTML
             </button>
           </div>
-          <StatusBar status={status} pending={doc.pendingOps} />
+          <StatusBar status={status} />
           <Avatars awareness={awareness} />
           <button
             onClick={() => setShowShare(true)}
@@ -195,10 +192,6 @@ function RouterApp() {
   switch (route.page) {
     case "dashboard":
       return <Dashboard />
-    case "login":
-      return <Login />
-    case "register":
-      return <Register />
     case "editor":
       return <RoomEditor room={route.room} />
   }

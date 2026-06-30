@@ -7,8 +7,6 @@ import { config } from "./config"
 import { Persistence } from "./persistence"
 import { RoomRegistry } from "./rooms"
 import type { Room } from "./room"
-import { issueToken, verifyToken, colorForUser } from "./auth"
-import { authRouter } from "./routes/auth"
 import { documentRouter } from "./routes/documents"
 
 async function main(): Promise<void> {
@@ -22,8 +20,7 @@ async function main(): Promise<void> {
 
   app.get("/health", (_req, res) => res.json({ ok: true }))
 
-  // Auth + document management routes
-  app.use("/api/auth", authRouter)
+  // Document management routes
   app.use("/api/documents", documentRouter)
 
   const server = http.createServer(app)
@@ -59,8 +56,7 @@ async function main(): Promise<void> {
 
       switch (msg.t) {
         case "hello": {
-          const claims = verifyToken(msg.token)
-          session.name = claims?.name ?? "Anonymous"
+          session.name = msg.name ?? "Anonymous"
           const room = await registry.get(msg.room)
           const client = {
             socket,
