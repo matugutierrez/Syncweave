@@ -18,6 +18,15 @@ async function main(): Promise<void> {
   app.use(cors({ origin: config.corsOrigin }))
   app.use(express.json())
 
+  app.get("/", (_req, res) => {
+    res.json({
+      ok: true,
+      name: "SyncWeave Server",
+      health: "/health",
+      documents: "/api/documents",
+      websocket: "/sync",
+    })
+  })
   app.get("/health", (_req, res) => res.json({ ok: true }))
 
   // Document management routes

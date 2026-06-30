@@ -3,26 +3,26 @@
 @tailwind utilities;
 
 :root {
-  --bg: #1a1a1a;
-  --bg-panel: #242424;
-  --bg-hover: #2e2e2e;
-  --text: #e5e5e5;
-  --text-muted: #888888;
-  --border: #333333;
-  --accent: #3b82f6;
-  --accent-hover: #2563eb;
+  --bg: #151515;
+  --bg-panel: #202020;
+  --bg-hover: #2a2a2a;
+  --text: #ededed;
+  --text-muted: #9a9a9a;
+  --border: #343434;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
   --danger: #ef4444;
   --success: #22c55e;
   color-scheme: dark;
 }
 
 .light {
-  --bg: #f8f8f8;
+  --bg: #f6f5f2;
   --bg-panel: #ffffff;
-  --bg-hover: #f0f0f0;
-  --text: #1a1a1a;
-  --text-muted: #888888;
-  --border: #e0e0e0;
+  --bg-hover: #ece9e2;
+  --text: #181817;
+  --text-muted: #6f6b63;
+  --border: #ded9cf;
   --accent: #2563eb;
   --accent-hover: #1d4ed8;
   --danger: #dc2626;
@@ -43,8 +43,13 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: Inter, system-ui, sans-serif;
+  letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+button, input {
+  font: inherit;
 }
 
 ::selection {

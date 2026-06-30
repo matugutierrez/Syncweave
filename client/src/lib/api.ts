@@ -1,3 +1,5 @@
+import { config } from "@/config"
+
 export interface DocumentMeta {
   id: string
   name: string
@@ -5,10 +7,8 @@ export interface DocumentMeta {
   updatedAt: string
 }
 
-const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3001"
-
 async function request<T>(method: string, url: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${BASE}${url}`, {
+  const res = await fetch(`${config.apiUrl}${url}`, {
     method,
     headers: { "Content-Type": "application/json" },
     body: body != null ? JSON.stringify(body) : undefined,

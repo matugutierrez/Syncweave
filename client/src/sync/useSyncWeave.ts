@@ -49,10 +49,6 @@ export function useSyncWeave(room: string, userName: string): UseSyncWeave {
 
     void persistence.init().then(() => {
       if (disposed) return
-      if (doc.childrenOf("root").length === 0) {
-        const blockId = doc.addBlock("paragraph")
-        doc.insertText(blockId, 0, "Welcome to SyncWeave!")
-      }
       setRevision((r) => r + 1)
     })
 
@@ -69,7 +65,7 @@ export function useSyncWeave(room: string, userName: string): UseSyncWeave {
       offAwareness()
       provider.dispose()
     }
-  }, [room, doc, awareness])
+  }, [room, doc, awareness, userName])
 
   return { doc, awareness, undo, status, revision }
 }

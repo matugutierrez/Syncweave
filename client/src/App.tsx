@@ -20,11 +20,10 @@ import { useToast } from "@/lib/toast"
 function RoomEditor({ room }: { room: string }) {
   const addToast = useToast((s) => s.add)
   const [name] = useState(() => `User ${Math.floor(Math.random() * 1000)}`)
-  const { doc, awareness, undo, status } = useSyncWeave(room, name)
+  const { doc, awareness, undo, status, revision } = useSyncWeave(room, name)
   const [showShare, setShowShare] = useState(false)
-  const [showWelcome, setShowWelcome] = useState(false)
 
-  const blocks = useMemo(() => doc.childrenOf("root"), [doc, undo])
+  const blocks = useMemo(() => doc.childrenOf("root"), [doc, revision])
 
   const handleCaret = useCallback(
     (blockId: string, caret: number) => {
@@ -101,15 +100,18 @@ function RoomEditor({ room }: { room: string }) {
     addToast("Exported as HTML", "success")
   }, [blocks, room, addToast])
 
-  if (blocks.length === 0 && status !== "connecting") {
-    setShowWelcome(true)
-  }
+  const isOpeningEmptyDocument = blocks.length === 0 && status === "connecting"
 
   return (
-    <>
-      <div className="flex items-center justify-between">
-        <Toolbar doc={doc} undo={undo} onAddBlock={handleAddBlock} />
-        <div className="flex items-center gap-3">
+    <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-[0.2em]" style={{ color: "var(--text-muted)" }}>
+            Collaborative document
+          </p>
+          <h1 className="mt-1 truncate text-2xl font-semibold">{room.replace(/^doc_/, "Document ")}</h1>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
           <div className="flex gap-1">
             <button
               onClick={handleExportMarkdown}
@@ -140,13 +142,19 @@ function RoomEditor({ room }: { room: string }) {
       </div>
 
       <main
-        className="mt-6 flex flex-col gap-1 rounded-xl p-6 ring-1"
+        className="mt-6 flex min-h-[60vh] flex-col gap-1 rounded-2xl p-5 shadow-sm ring-1 sm:p-8 lg:p-10"
         style={{
           background: "var(--bg-panel)",
           borderColor: "var(--border)",
         }}
       >
-        {showWelcome && blocks.length === 0 ? (
+        <Toolbar doc={doc} undo={undo} onAddBlock={handleAddBlock} />
+        <div className="my-5 h-px" style={{ background: "var(--border)" }} />
+        {isOpeningEmptyDocument ? (
+          <div className="flex flex-1 items-center justify-center py-20 text-sm" style={{ color: "var(--text-muted)" }}>
+            Opening document...
+          </div>
+        ) : blocks.length === 0 ? (
           <WelcomeScreen doc={doc} userName={name} />
         ) : (
           <>
@@ -182,7 +190,7 @@ function RoomEditor({ room }: { room: string }) {
       </main>
 
       {showShare && <ShareDialog roomId={room} onClose={() => setShowShare(false)} />}
-    </>
+    </div>
   )
 }
 
