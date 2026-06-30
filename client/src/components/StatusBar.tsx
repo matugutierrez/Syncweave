@@ -1,15 +1,9 @@
 import type { ConnectionStatus } from "@/sync/WebsocketProvider"
 
-const LABEL: Record<ConnectionStatus, string> = {
-  connecting: "Connecting…",
-  online: "Live — synced",
-  offline: "Offline — changes saved locally",
-}
-
-const DOT: Record<ConnectionStatus, string> = {
-  connecting: "bg-yellow-400",
-  online: "bg-green-400",
-  offline: "bg-red-400",
+const STATUS: Record<ConnectionStatus, { label: string; dot: string }> = {
+  connecting: { label: "Connecting…", dot: "bg-yellow-400" },
+  online: { label: "Synced", dot: "bg-green-400" },
+  offline: { label: "Offline — saved locally", dot: "bg-red-400" },
 }
 
 export function StatusBar({
@@ -19,12 +13,13 @@ export function StatusBar({
   status: ConnectionStatus
   pending: number
 }) {
+  const s = STATUS[status]
   return (
-    <div className="flex items-center gap-2 text-xs text-white/60">
-      <span className={`h-2 w-2 rounded-full ${DOT[status]}`} />
-      <span>{LABEL[status]}</span>
+    <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
+      <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
+      <span>{s.label}</span>
       {pending > 0 && (
-        <span className="text-white/40">· {pending} buffered</span>
+        <span>· {pending} pending</span>
       )}
     </div>
   )

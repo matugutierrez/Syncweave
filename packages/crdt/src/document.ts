@@ -1,11 +1,13 @@
 import type { ClientID, ID } from "./id"
 import { generateClientID } from "./id"
-import { VersionVector } from "./clock"
+import { VersionVector, HybridLogicalClock } from "./clock"
+import type { Timestamp } from "./clock"
 import {
   type Operation,
   type InsertOp,
   type DeleteOp,
   type AddBlockOp,
+  type SetOp,
 } from "./operations"
 import { SequenceCRDT } from "./sequence"
 import { LWWMap } from "./lww-map"
@@ -36,6 +38,7 @@ export class CRDTDocument {
   readonly clientID: ClientID
   readonly version: VersionVector
   private clock = 0
+  private readonly hlc = new HybridLogicalClock()
   private readonly blocks = new Map<string, BlockData>()
   private readonly opLog: OpLog
   private readonly listeners = new Set<(ops: Operation[]) => void>()
@@ -119,11 +122,37 @@ export class CRDTDocument {
     this.emit([op])
   }
 
+  private effectiveType(block: BlockData): string {
+    const attr = block.attrs.get("blockType")
+    return typeof attr === "string" ? attr : block.type
+  }
+
+  setBlockType(blockId: string, newType: string): void {
+    const block = this.blocks.get(blockId)
+    if (!block) return
+    const { wall, counter } = this.hlc.now()
+    const ts: Timestamp = { wall, counter, client: this.clientID }
+    const op: SetOp = {
+      type: "set",
+      id: this.nextID(),
+      target: blockId,
+      key: "blockType",
+      value: newType,
+      ts,
+    }
+    this.opLog.receive(op)
+  }
+
   childrenOf(parentId: string): BlockInfo[] {
     const entries: Array<BlockInfo & { order: string }> = []
     for (const [id, block] of this.blocks) {
       if (block.parent === parentId) {
-        entries.push({ id, type: block.type, text: block.text, order: block.order })
+        entries.push({
+          id,
+          type: this.effectiveType(block),
+          text: block.text,
+          order: block.order,
+        })
       }
     }
     entries.sort((a, b) => a.order.localeCompare(b.order))

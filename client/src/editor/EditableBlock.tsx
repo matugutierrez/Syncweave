@@ -1,6 +1,8 @@
-import { useEffect, useRef } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import type { CRDTDocument, UndoManager } from "@syncweave/crdt"
 import { diffText } from "@/lib/diff"
+import { SlashMenu } from "@/editor/SlashMenu"
+import { FormatToolbar } from "@/editor/FormatToolbar"
 
 interface EditableBlockProps {
   doc: CRDTDocument
@@ -8,88 +10,20 @@ interface EditableBlockProps {
   blockId: string
   text: string
   type: string
+  index: number
+  onChangeType: (blockId: string, newType: string) => void
   onCaret: (blockId: string, caret: number) => void
 }
 
-/**
- * A single editable block bound to a block's text sequence in the CRDT.
- *
- * On every input we diff the DOM text against the last-known CRDT text to
- * derive the minimal change, then translate it into insert/delete operations.
- * Because the CRDT integrates concurrent remote ops independently, the block
- * re-renders from `text` (the authoritative materialized value) and we restore
- * the caret — so remote edits never clobber what the local user is typing.
- */
-export function EditableBlock({
-  doc,
-  undo,
-  blockId,
-  text,
-  type,
-  onCaret,
-}: EditableBlockProps) {
-  const ref = useRef<HTMLDivElement>(null)
-  const lastText = useRef(text)
-
-  // Keep the DOM in sync with the authoritative CRDT text without disturbing
-  // the caret when the local user is the one typing.
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    if (el.textContent !== text) {
-      const caret = getCaret(el)
-      el.textContent = text
-      if (caret !== null) setCaret(el, Math.min(caret, text.length))
-    }
-    lastText.current = text
-  }, [text])
-
-  const handleInput = () => {
-    const el = ref.current
-    if (!el) return
-    const next = el.textContent ?? ""
-    const change = diffText(lastText.current, next)
-    if (!change) return
-
-    doc.transact(() => {
-      if (change.removed.length > 0) {
-        undo.trackDelete(blockId, change.index, change.removed)
-        doc.deleteText(blockId, change.index, change.removed.length)
-      }
-      if (change.inserted.length > 0) {
-        undo.trackInsert(blockId, change.index, change.inserted)
-        doc.insertText(blockId, change.index, change.inserted)
-      }
-    })
-    lastText.current = next
-    onCaret(blockId, getCaret(el) ?? 0)
-  }
-
-  const isHeading = type === "heading"
-  const handleCaret = () => {
-    const el = ref.current
-    if (el) onCaret(blockId, getCaret(el) ?? 0)
-  }
-
-  return (
-    <div
-      ref={ref}
-      role="textbox"
-      aria-multiline="true"
-      className={`editor-block px-1 py-0.5 leading-relaxed outline-none ${
-        isHeading ? "text-2xl font-semibold" : "text-base"
-      }`}
-      contentEditable
-      suppressContentEditableWarning
-      data-block-id={blockId}
-      onInput={handleInput}
-      onKeyUp={handleCaret}
-      onClick={handleCaret}
-    />
-  )
-}
-
-// ----- caret helpers ------------------------------------------------------
+const MARKDOWN_SHORTCUTS: Array<[RegExp, string]> = [
+  [/^#\s$/, "heading1"],
+  [/^##\s$/, "heading2"],
+  [/^###\s$/, "heading3"],
+  [/^-\s$/, "bullet-list"],
+  [/^1\.\s$/, "numbered-list"],
+  [/^\[\]\s$/, "todo"],
+  [/^>\s$/, "quote"],
+]
 
 function getCaret(el: HTMLElement): number | null {
   const sel = window.getSelection()
@@ -111,4 +45,190 @@ function setCaret(el: HTMLElement, offset: number): void {
   range.collapse(true)
   sel.removeAllRanges()
   sel.addRange(range)
+}
+
+export function EditableBlock({
+  doc,
+  undo,
+  blockId,
+  text,
+  type,
+  index,
+  onChangeType,
+  onCaret,
+}: EditableBlockProps) {
+  const ref = useRef<HTMLDivElement>(null)
+  const lastText = useRef(text)
+  const [slashMenu, setSlashMenu] = useState<{ top: number; left: number } | null>(null)
+  const [formatToolbar, setFormatToolbar] = useState<{ top: number; left: number } | null>(null)
+  const isTypingSlash = useRef(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    if (el.textContent !== text) {
+      const caret = getCaret(el)
+      el.textContent = text
+      if (caret !== null) setCaret(el, Math.min(caret, text.length))
+    }
+    lastText.current = text
+  }, [text])
+
+  const handleInput = useCallback(() => {
+    const el = ref.current
+    if (!el) return
+    if (type === "divider") return
+
+    const next = el.textContent ?? ""
+    const change = diffText(lastText.current, next)
+
+    if (change) {
+      if (change.inserted === "/" && change.index === 0 && lastText.current === "") {
+        isTypingSlash.current = true
+      }
+
+      for (const [pattern, blockType] of MARKDOWN_SHORTCUTS) {
+        if (pattern.test(next)) {
+          el.textContent = ""
+          onChangeType(blockId, blockType)
+          return
+        }
+      }
+
+      doc.transact(() => {
+        if (change.removed.length > 0) {
+          undo.trackDelete(blockId, change.index, change.removed)
+          doc.deleteText(blockId, change.index, change.removed.length)
+        }
+        if (change.inserted.length > 0) {
+          undo.trackInsert(blockId, change.index, change.inserted)
+          doc.insertText(blockId, change.index, change.inserted)
+        }
+      })
+    }
+
+    lastText.current = next
+
+    if (next === "/" && isTypingSlash.current) {
+      const rect = el.getBoundingClientRect()
+      setSlashMenu({ top: rect.bottom + 4, left: rect.left })
+    } else if (next !== "/") {
+      isTypingSlash.current = false
+    }
+
+    onCaret(blockId, getCaret(el) ?? 0)
+  }, [doc, undo, blockId, type, onChangeType, onCaret])
+
+  const handleSelect = useCallback(() => {
+    const sel = window.getSelection()
+    if (!sel || sel.isCollapsed || !ref.current) {
+      setFormatToolbar(null)
+      return
+    }
+    const range = sel.getRangeAt(0)
+    const rect = range.getBoundingClientRect()
+    if (rect.width > 0) {
+      setFormatToolbar({
+        top: rect.top - 40,
+        left: rect.left + rect.width / 2,
+      })
+    }
+  }, [])
+
+  const handleSlashSelect = useCallback(
+    (blockType: string) => {
+      const el = ref.current
+      if (el) el.textContent = ""
+      lastText.current = ""
+      isTypingSlash.current = false
+      setSlashMenu(null)
+      onChangeType(blockId, blockType)
+    },
+    [blockId, onChangeType],
+  )
+
+  if (type === "divider") {
+    return <hr className="my-3 border-0" style={{ borderTop: "1px solid var(--border)" }} />
+  }
+
+  if (type === "code-block") {
+    return (
+      <div
+        ref={ref}
+        role="textbox"
+        aria-multiline="true"
+        contentEditable
+        suppressContentEditableWarning
+        className="editor-block rounded-lg px-4 py-3 font-mono text-sm leading-relaxed outline-none"
+        style={{
+          background: "var(--bg)",
+          border: "1px solid var(--border)",
+        }}
+        data-block-id={blockId}
+        onInput={handleInput}
+        onSelect={handleSelect}
+        onKeyUp={() => ref.current && onCaret(blockId, getCaret(ref.current) ?? 0)}
+        onClick={() => ref.current && onCaret(blockId, getCaret(ref.current) ?? 0)}
+      />
+    )
+  }
+
+  const headingSize: Record<string, string> = {
+    heading1: "text-3xl font-bold",
+    heading2: "text-2xl font-semibold",
+    heading3: "text-xl font-semibold",
+  }
+
+  const prefix = (() => {
+    if (type === "bullet-list") return <span className="mr-2 select-none">•</span>
+    if (type === "numbered-list") return <span className="mr-2 select-none font-mono text-xs" style={{ color: "var(--text-muted)" }}>{index + 1}.</span>
+    if (type === "todo") return <span className="mr-2 select-none text-base">☐</span>
+    if (type === "quote") return null
+    return null
+  })()
+
+  return (
+    <div className="flex items-start">
+      {prefix}
+      <div
+        ref={ref}
+        role="textbox"
+        aria-multiline="true"
+        className={`editor-block flex-1 px-1 py-0.5 leading-relaxed outline-none ${headingSize[type] ?? "text-base"}`}
+        style={{
+          ...(type === "quote" ? {
+            borderLeft: "3px solid var(--accent)",
+            paddingLeft: "12px",
+            fontStyle: "italic",
+          } as React.CSSProperties : {}),
+          ...(type === "todo" ? { cursor: "default" } as React.CSSProperties : {}),
+        }}
+        contentEditable={type !== "todo"}
+        suppressContentEditableWarning
+        data-block-id={blockId}
+        onInput={handleInput}
+        onSelect={handleSelect}
+        onKeyUp={() => ref.current && onCaret(blockId, getCaret(ref.current) ?? 0)}
+        onClick={() => ref.current && onCaret(blockId, getCaret(ref.current) ?? 0)}
+        onMouseUp={handleSelect}
+      />
+
+      {slashMenu && (
+        <SlashMenu
+          top={slashMenu.top}
+          left={slashMenu.left}
+          onSelect={handleSlashSelect}
+          onClose={() => setSlashMenu(null)}
+        />
+      )}
+
+      {formatToolbar && (
+        <FormatToolbar
+          top={formatToolbar.top}
+          left={formatToolbar.left}
+          onClose={() => setFormatToolbar(null)}
+        />
+      )}
+    </div>
+  )
 }

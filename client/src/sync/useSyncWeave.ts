@@ -17,16 +17,11 @@ interface UseSyncWeave {
   awareness: Awareness
   undo: UndoManager
   status: ConnectionStatus
-  /** Monotonic counter bumped on every document change to trigger re-render. */
   revision: number
 }
 
 const COLORS = ["#ef4444", "#22c55e", "#3b82f6", "#a855f7", "#f59e0b"]
 
-/**
- * React hook that wires up a full collaborative session for a room:
- * document + offline persistence + websocket sync + presence + undo.
- */
 export function useSyncWeave(room: string, userName: string): UseSyncWeave {
   const [status, setStatus] = useState<ConnectionStatus>("connecting")
   const [revision, setRevision] = useState(0)
@@ -54,14 +49,15 @@ export function useSyncWeave(room: string, userName: string): UseSyncWeave {
 
     void persistence.init().then(() => {
       if (disposed) return
-      // Seed an empty document with one paragraph if brand new.
       if (doc.childrenOf("root").length === 0) {
-        doc.addBlock("paragraph")
+        const blockId = doc.addBlock("paragraph")
+        doc.insertText(blockId, 0, "Welcome to SyncWeave!")
       }
       setRevision((r) => r + 1)
     })
 
-    const provider = new WebsocketProvider(room, doc, awareness)
+    const token = localStorage.getItem("syncweave-token") ?? undefined
+    const provider = new WebsocketProvider(room, doc, awareness, token)
     providerRef.current = provider
     const offStatus = provider.onStatus(setStatus)
     const offDoc = doc.onChange(() => setRevision((r) => r + 1))

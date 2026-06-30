@@ -8,6 +8,8 @@ import { Persistence } from "./persistence"
 import { RoomRegistry } from "./rooms"
 import type { Room } from "./room"
 import { issueToken, verifyToken, colorForUser } from "./auth"
+import { authRouter } from "./routes/auth"
+import { documentRouter } from "./routes/documents"
 
 async function main(): Promise<void> {
   const persistence = new Persistence()
@@ -20,13 +22,9 @@ async function main(): Promise<void> {
 
   app.get("/health", (_req, res) => res.json({ ok: true }))
 
-  // Issue a demo collaboration token (in production this would be real auth).
-  app.post("/auth/token", (req, res) => {
-    const name = String(req.body?.name ?? "Anonymous").slice(0, 40)
-    const sub = `u_${Math.random().toString(36).slice(2, 10)}`
-    const token = issueToken({ sub, name, color: colorForUser(sub) })
-    res.json({ token, sub, name, color: colorForUser(sub) })
-  })
+  // Auth + document management routes
+  app.use("/api/auth", authRouter)
+  app.use("/api/documents", documentRouter)
 
   const server = http.createServer(app)
   const wss = new WebSocketServer({ server, path: "/sync" })

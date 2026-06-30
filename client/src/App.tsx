@@ -1,80 +1,216 @@
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useSyncWeave } from "@/sync/useSyncWeave"
+import { ThemeProvider } from "@/lib/theme"
+import { useRouter } from "@/lib/router"
+import { Layout } from "@/components/Layout"
+import { ToastContainer } from "@/components/Toast"
+import { WelcomeScreen } from "@/components/WelcomeScreen"
+import { ShareDialog } from "@/components/ShareDialog"
+import { Skeleton } from "@/components/Skeleton"
 import { EditableBlock } from "@/editor/EditableBlock"
+import { BlockHandle } from "@/editor/BlockHandle"
+import { BlockAdder } from "@/editor/BlockAdder"
 import { RemoteCursors } from "@/presence/RemoteCursors"
 import { Avatars } from "@/presence/Avatars"
 import { Toolbar } from "@/components/Toolbar"
 import { StatusBar } from "@/components/StatusBar"
+import { Dashboard } from "@/pages/Dashboard"
+import { Login } from "@/pages/Login"
+import { Register } from "@/pages/Register"
+import { toMarkdown, toHtml } from "@/lib/export"
+import { useToast } from "@/lib/toast"
 
-function useRoom(): string {
-  return useMemo(() => {
-    const hash = window.location.hash.replace(/^#/, "")
-    if (hash) return hash
-    const id = Math.random().toString(36).slice(2, 8)
-    window.location.hash = id
-    return id
-  }, [])
-}
+function RoomEditor({ room }: { room: string }) {
+  const ADD_TOAST = useToast((s) => s.add)
+  const [name] = useState(() => `User ${Math.floor(Math.random() * 1000)}`)
+  const { doc, awareness, undo, status, revision } = useSyncWeave(room, name)
+  const [showShare, setShowShare] = useState(false)
+  const [showWelcome, setShowWelcome] = useState(false)
 
-export function App() {
-  const room = useRoom()
-  const [name] = useState(
-    () => `User ${Math.floor(Math.random() * 1000)}`,
+  const blocks = useMemo(() => doc.childrenOf("root"), [doc, revision])
+
+  const handleCaret = useCallback(
+    (blockId: string, caret: number) => {
+      awareness.setLocalState({ blockId, cursor: caret, selection: null })
+    },
+    [awareness],
   )
-  const { doc, awareness, undo, status } = useSyncWeave(room, name)
 
-  // `revision` from the hook drives re-render; read the latest snapshot here.
-  const blocks = doc.childrenOf("root")
+  const handleAddBlock = useCallback(
+    (type: string) => {
+      const id = doc.addBlock(type)
+      setTimeout(() => {
+        const el = document.querySelector(`[data-block-id="${id}"]`) as HTMLElement | null
+        el?.focus()
+      }, 0)
+    },
+    [doc],
+  )
 
-  const handleCaret = (blockId: string, caret: number) => {
-    awareness.setLocalState({ blockId, cursor: caret, selection: null })
-  }
+  const handleChangeType = useCallback(
+    (blockId: string, newType: string) => {
+      doc.setBlockType(blockId, newType)
+    },
+    [doc],
+  )
 
-  const handleAddBlock = (type: string) => {
-    doc.addBlock(type)
+  const handleDeleteBlock = useCallback(
+    (blockId: string) => {
+      doc.transact(() => {
+        const block = blocks.find((b) => b.id === blockId)
+        if (block) {
+          const len = block.text.length
+          if (len > 0) doc.deleteText(blockId, 0, len)
+        }
+      })
+    },
+    [doc, blocks],
+  )
+
+  const handleDuplicateBlock = useCallback(
+    (blockId: string) => {
+      const block = blocks.find((b) => b.id === blockId)
+      if (!block) return
+      const newId = doc.addBlock(block.type)
+      const text = block.text.toString()
+      if (text.length > 0) {
+        doc.insertText(newId, 0, text)
+      }
+    },
+    [doc, blocks],
+  )
+
+  const handleExportMarkdown = useCallback(() => {
+    const md = toMarkdown(blocks)
+    const blob = new Blob([md], { type: "text/markdown" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `${room}.md`
+    a.click()
+    URL.revokeObjectURL(url)
+    ADD_TOAST("Exported as Markdown", "success")
+  }, [blocks, room, ADD_TOAST])
+
+  const handleExportHtml = useCallback(() => {
+    const html = toHtml(blocks)
+    const blob = new Blob([html], { type: "text/html" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `${room}.html`
+    a.click()
+    URL.revokeObjectURL(url)
+    ADD_TOAST("Exported as HTML", "success")
+  }, [blocks, room, ADD_TOAST])
+
+  if (blocks.length === 0 && status !== "connecting") {
+    setShowWelcome(true)
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 px-6 py-10">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold">SyncWeave</h1>
-          <p className="text-sm text-white/50">
-            Room <span className="font-mono">{room}</span> — share the URL to
-            collaborate
-          </p>
-        </div>
-        <Avatars awareness={awareness} />
-      </header>
-
+    <>
       <div className="flex items-center justify-between">
         <Toolbar doc={doc} undo={undo} onAddBlock={handleAddBlock} />
-        <StatusBar status={status} pending={doc.pendingOps} />
+        <div className="flex items-center gap-3">
+          <div className="flex gap-1">
+            <button
+              onClick={handleExportMarkdown}
+              className="rounded-lg px-2.5 py-1.5 text-xs transition-colors hover:bg-[var(--bg-hover)]"
+              style={{ color: "var(--text-muted)" }}
+              title="Export Markdown"
+            >
+              MD
+            </button>
+            <button
+              onClick={handleExportHtml}
+              className="rounded-lg px-2.5 py-1.5 text-xs transition-colors hover:bg-[var(--bg-hover)]"
+              style={{ color: "var(--text-muted)" }}
+              title="Export HTML"
+            >
+              HTML
+            </button>
+          </div>
+          <StatusBar status={status} pending={doc.pendingOps} />
+          <Avatars awareness={awareness} />
+          <button
+            onClick={() => setShowShare(true)}
+            className="rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-accent-hover"
+          >
+            Share
+          </button>
+        </div>
       </div>
 
-      <main className="flex flex-col gap-1 rounded-xl bg-panel/60 p-6 ring-1 ring-white/10">
-        {blocks.length === 0 && (
-          <p className="text-white/40">Loading document…</p>
+      <main
+        className="mt-6 flex flex-col gap-1 rounded-xl p-6 ring-1"
+        style={{
+          background: "var(--bg-panel)",
+          borderColor: "var(--border)",
+        }}
+      >
+        {showWelcome && blocks.length === 0 ? (
+          <WelcomeScreen doc={doc} userName={name} />
+        ) : (
+          <>
+            {blocks.map((block, i) => (
+              <div key={block.id}>
+                {i > 0 && <BlockAdder onAdd={handleAddBlock} />}
+                <div className="relative group">
+                  <BlockHandle
+                    blockId={block.id}
+                    onDelete={handleDeleteBlock}
+                    onDuplicate={handleDuplicateBlock}
+                    onTypeChange={handleChangeType}
+                  />
+                  <div className="relative">
+                    <RemoteCursors awareness={awareness} blockId={block.id} />
+                    <EditableBlock
+                      doc={doc}
+                      undo={undo}
+                      blockId={block.id}
+                      type={block.type}
+                      text={block.text.toString()}
+                      index={i}
+                      onChangeType={handleChangeType}
+                      onCaret={handleCaret}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+            {blocks.length > 0 && <BlockAdder onAdd={handleAddBlock} />}
+          </>
         )}
-        {blocks.map((block) => (
-          <div key={block.id} className="relative">
-            <RemoteCursors awareness={awareness} blockId={block.id} />
-            <EditableBlock
-              doc={doc}
-              undo={undo}
-              blockId={block.id}
-              type={block.type}
-              text={block.text.toString()}
-              onCaret={handleCaret}
-            />
-          </div>
-        ))}
       </main>
 
-      <footer className="text-center text-xs text-white/30">
-        Built on a from-scratch CRDT engine · open two tabs to see real-time
-        merge
-      </footer>
-    </div>
+      {showShare && <ShareDialog roomId={room} onClose={() => setShowShare(false)} />}
+    </>
+  )
+}
+
+function RouterApp() {
+  const { route } = useRouter()
+
+  switch (route.page) {
+    case "dashboard":
+      return <Dashboard />
+    case "login":
+      return <Login />
+    case "register":
+      return <Register />
+    case "editor":
+      return <RoomEditor room={route.room} />
+  }
+}
+
+export function App() {
+  return (
+    <ThemeProvider>
+      <Layout>
+        <RouterApp />
+      </Layout>
+      <ToastContainer />
+    </ThemeProvider>
   )
 }
