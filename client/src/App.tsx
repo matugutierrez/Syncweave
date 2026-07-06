@@ -24,6 +24,17 @@ function RoomEditor({ room }: { room: string }) {
   const [showShare, setShowShare] = useState(false)
 
   const blocks = useMemo(() => doc.childrenOf("root"), [doc, revision])
+  const numberedIndexById = useMemo(() => {
+    const indexes = new Map<string, number>()
+    let current = 0
+    for (const block of blocks) {
+      if (block.type === "numbered-list") {
+        current += 1
+        indexes.set(block.id, current)
+      }
+    }
+    return indexes
+  }, [blocks])
 
   const handleCaret = useCallback(
     (blockId: string, caret: number) => {
@@ -103,19 +114,24 @@ function RoomEditor({ room }: { room: string }) {
   const isOpeningEmptyDocument = blocks.length === 0 && status === "connecting"
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="mx-auto w-full max-w-5xl px-3 py-6 sm:px-6 sm:py-8 lg:px-8">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em]" style={{ color: "var(--text-muted)" }}>
+          <p className="text-[10px] uppercase tracking-[0.2em] sm:text-xs" style={{ color: "var(--text-muted)" }}>
             Collaborative document
           </p>
-          <h1 className="mt-1 truncate text-2xl font-semibold">{room.replace(/^doc_/, "Document ")}</h1>
+          <h1 className="mt-1 max-w-3xl truncate text-lg font-semibold tracking-[-0.03em] sm:text-2xl">
+            {room.startsWith("doc_") ? "Untitled document" : room}
+          </h1>
+          <p className="mt-1 font-mono text-[10px] sm:text-xs" style={{ color: "var(--text-muted)" }}>
+            {room}
+          </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex gap-1">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-3">
+          <div className="flex gap-0.5 sm:gap-1">
             <button
               onClick={handleExportMarkdown}
-              className="rounded-lg px-2.5 py-1.5 text-xs transition-colors hover:bg-[var(--bg-hover)]"
+              className="rounded-lg px-2 py-1 text-[11px] transition-colors hover:bg-[var(--bg-hover)] sm:px-2.5 sm:py-1.5 sm:text-xs"
               style={{ color: "var(--text-muted)" }}
               title="Export Markdown"
             >
@@ -123,7 +139,7 @@ function RoomEditor({ room }: { room: string }) {
             </button>
             <button
               onClick={handleExportHtml}
-              className="rounded-lg px-2.5 py-1.5 text-xs transition-colors hover:bg-[var(--bg-hover)]"
+              className="rounded-lg px-2 py-1 text-[11px] transition-colors hover:bg-[var(--bg-hover)] sm:px-2.5 sm:py-1.5 sm:text-xs"
               style={{ color: "var(--text-muted)" }}
               title="Export HTML"
             >
@@ -134,7 +150,7 @@ function RoomEditor({ room }: { room: string }) {
           <Avatars awareness={awareness} />
           <button
             onClick={() => setShowShare(true)}
-            className="rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-accent-hover"
+            className="rounded-lg bg-accent px-2.5 py-1 text-[11px] font-semibold text-white transition-colors hover:bg-accent-hover sm:px-3 sm:py-1.5 sm:text-xs"
           >
             Share
           </button>
@@ -142,7 +158,7 @@ function RoomEditor({ room }: { room: string }) {
       </div>
 
       <main
-        className="mt-6 flex min-h-[60vh] flex-col gap-1 rounded-2xl p-5 shadow-sm ring-1 sm:p-8 lg:p-10"
+        className="mt-4 flex min-h-[60vh] flex-col gap-1 rounded-2xl border p-4 shadow-sm sm:mt-6 sm:rounded-3xl sm:p-8 lg:p-10"
         style={{
           background: "var(--bg-panel)",
           borderColor: "var(--border)",
@@ -176,7 +192,7 @@ function RoomEditor({ room }: { room: string }) {
                       blockId={block.id}
                       type={block.type}
                       text={block.text.toString()}
-                      index={i}
+                      index={numberedIndexById.get(block.id) ?? i + 1}
                       onChangeType={handleChangeType}
                       onCaret={handleCaret}
                     />

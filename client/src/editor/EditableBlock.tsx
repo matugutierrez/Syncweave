@@ -159,7 +159,7 @@ export function EditableBlock({
         aria-multiline="true"
         contentEditable
         suppressContentEditableWarning
-        className="editor-block rounded-lg px-4 py-3 font-mono text-sm leading-relaxed outline-none"
+        className="editor-block min-w-0 whitespace-pre-wrap break-words rounded-xl px-4 py-3 font-mono text-sm leading-relaxed outline-none [overflow-wrap:anywhere]"
         style={{
           background: "var(--bg)",
           border: "1px solid var(--border)",
@@ -174,27 +174,27 @@ export function EditableBlock({
   }
 
   const headingSize: Record<string, string> = {
-    heading1: "text-3xl font-bold",
-    heading2: "text-2xl font-semibold",
-    heading3: "text-xl font-semibold",
+    heading1: "text-3xl font-semibold tracking-[-0.04em] sm:text-4xl",
+    heading2: "text-2xl font-semibold tracking-[-0.03em]",
+    heading3: "text-xl font-semibold tracking-[-0.02em]",
   }
 
   const prefix = (() => {
     if (type === "bullet-list") return <span className="mr-2 select-none">•</span>
-    if (type === "numbered-list") return <span className="mr-2 select-none font-mono text-xs" style={{ color: "var(--text-muted)" }}>{index + 1}.</span>
+    if (type === "numbered-list") return <span className="mr-3 min-w-5 select-none text-right font-mono text-xs leading-7" style={{ color: "var(--text-muted)" }}>{index}.</span>
     if (type === "todo") return <span className="mr-2 select-none text-base">☐</span>
     if (type === "quote") return null
     return null
   })()
 
   return (
-    <div className="flex items-start">
+    <div className="flex min-w-0 items-start py-1">
       {prefix}
       <div
         ref={ref}
         role="textbox"
         aria-multiline="true"
-        className={`editor-block flex-1 px-1 py-0.5 leading-relaxed outline-none ${headingSize[type] ?? "text-base"}`}
+        className={`editor-block min-w-0 flex-1 whitespace-pre-wrap break-words px-1 py-0.5 leading-7 outline-none [overflow-wrap:anywhere] ${headingSize[type] ?? "text-base"}`}
         style={{
           ...(type === "quote" ? {
             borderLeft: "3px solid var(--accent)",

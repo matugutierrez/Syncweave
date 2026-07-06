@@ -53,35 +53,35 @@ export function Dashboard() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-      <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+    <div className="mx-auto w-full max-w-6xl px-3 py-6 sm:px-6 sm:py-10 lg:px-8">
+      <section className="grid gap-4 sm:gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div
-          className="rounded-3xl border p-8 shadow-sm sm:p-10"
+          className="rounded-2xl border p-5 shadow-sm sm:rounded-3xl sm:p-10"
           style={{ background: "var(--bg-panel)", borderColor: "var(--border)" }}
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.22em]" style={{ color: "var(--text-muted)" }}>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] sm:text-xs" style={{ color: "var(--text-muted)" }}>
             Workspace
           </p>
-          <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">
+          <h1 className="mt-3 max-w-2xl text-2xl font-semibold tracking-[-0.04em] sm:mt-4 sm:text-5xl">
             Write together without account friction.
           </h1>
-          <p className="mt-4 max-w-xl text-base leading-7" style={{ color: "var(--text-muted)" }}>
+          <p className="mt-3 max-w-xl text-sm leading-6 sm:mt-4 sm:text-base sm:leading-7" style={{ color: "var(--text-muted)" }}>
             Create a document, share the URL and edit in real time. Blocks, slash commands,
             exports and presence are ready from the first click.
           </p>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-5 flex flex-col gap-2 sm:mt-8 sm:flex-row sm:gap-3">
             <input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-              className="min-h-11 flex-1 rounded-xl border px-4 text-sm outline-none transition-colors focus:border-accent"
+              className="min-h-10 flex-1 rounded-xl border px-3.5 text-sm outline-none transition-colors focus:border-accent sm:min-h-11 sm:px-4"
               style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}
             />
             <button
               onClick={handleCreate}
               disabled={creating}
-              className="min-h-11 rounded-xl bg-accent px-6 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
+              className="min-h-10 rounded-xl bg-accent px-5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-50 sm:min-h-11 sm:px-6"
             >
               {creating ? "Opening..." : "New document"}
             </button>
@@ -89,14 +89,14 @@ export function Dashboard() {
         </div>
 
         <div
-          className="rounded-3xl border p-6 shadow-sm"
+          className="rounded-2xl border p-5 shadow-sm sm:rounded-3xl sm:p-6"
           style={{ background: "var(--bg-panel)", borderColor: "var(--border)" }}
         >
-          <h2 className="text-lg font-semibold">Open shared document</h2>
-          <p className="mt-2 text-sm leading-6" style={{ color: "var(--text-muted)" }}>
+          <h2 className="text-base font-semibold sm:text-lg">Open shared document</h2>
+          <p className="mt-1.5 text-xs leading-5 sm:mt-2 sm:text-sm sm:leading-6" style={{ color: "var(--text-muted)" }}>
             Paste a document id or full shared URL.
           </p>
-          <div className="mt-5 flex gap-2">
+          <div className="mt-4 flex gap-2 sm:mt-5">
             <input
               value={roomId}
               onChange={(e) => setRoomId(e.target.value)}
@@ -107,22 +107,22 @@ export function Dashboard() {
             />
             <button
               onClick={handleOpenRoom}
-              className="rounded-xl border px-4 text-sm font-semibold transition-colors hover:bg-[var(--bg-hover)]"
+              className="rounded-xl border px-3.5 text-sm font-semibold transition-colors hover:bg-[var(--bg-hover)] sm:px-4"
               style={{ borderColor: "var(--border)" }}
             >
               Open
             </button>
           </div>
-          <div className="mt-6 rounded-2xl p-4 text-sm" style={{ background: "var(--bg)", color: "var(--text-muted)" }}>
+          <div className="mt-4 rounded-xl p-3 text-xs sm:mt-6 sm:rounded-2xl sm:p-4 sm:text-sm" style={{ background: "var(--bg)", color: "var(--text-muted)" }}>
             {apiError ? "Server metadata is unavailable. Direct document links still open." : "Server connected. Document list is synced."}
           </div>
         </div>
       </section>
 
-      <section className="mt-8">
-        <div className="mb-4 flex items-end justify-between gap-4">
+      <section className="mt-6 sm:mt-8">
+        <div className="mb-3 flex items-end justify-between gap-4 sm:mb-4">
           <div>
-            <h2 className="text-xl font-semibold">Recent documents</h2>
+            <h2 className="text-lg font-semibold sm:text-xl">Recent documents</h2>
             <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>
               {loading ? "Loading..." : `${docs.length} saved document${docs.length === 1 ? "" : "s"}`}
             </p>

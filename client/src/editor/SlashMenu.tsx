@@ -47,7 +47,7 @@ export function SlashMenu({ top, left, onSelect, onClose }: SlashMenuProps) {
   return (
     <div
       ref={ref}
-      className="slash-menu fixed z-50 w-52 rounded-xl border py-1 shadow-2xl"
+      className="slash-menu fixed z-50 w-52 max-w-[calc(100vw-16px)] rounded-xl border py-1 shadow-2xl"
       style={{
         top,
         left,
@@ -61,10 +61,11 @@ export function SlashMenu({ top, left, onSelect, onClose }: SlashMenuProps) {
       {BLOCK_TYPES.map((bt, i) => (
         <button
           key={bt.type}
-          className={`slash-menu-item flex w-full items-center gap-3 px-3 py-2 text-left text-sm ${
-            i === selected ? "selected" : ""
-          }`}
-          style={{ color: i === selected ? "white" : "var(--text)" }}
+          className="slash-menu-item flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors"
+          style={{
+            background: i === selected ? "var(--accent)" : "transparent",
+            color: i === selected ? "white" : "var(--text)",
+          }}
           onClick={() => onSelect(bt.type)}
           onMouseEnter={() => setSelected(i)}
         >

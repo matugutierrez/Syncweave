@@ -13,14 +13,14 @@ export function BlockAdder({ onAdd }: BlockAdderProps) {
   }
 
   return (
-    <div className="group relative flex items-center justify-center py-0.5">
+    <div className="group relative flex items-center justify-center py-1 opacity-0 transition-opacity hover:opacity-100 focus-within:opacity-100">
       <div
         className="absolute inset-x-0 h-px opacity-0 transition-opacity group-hover:opacity-100"
         style={{ background: "var(--border)" }}
       />
       <button
         onClick={() => setOpen(!open)}
-        className="relative z-10 flex h-5 w-5 items-center justify-center rounded-full text-xs transition-all hover:scale-110"
+        className="relative z-10 flex h-5 w-5 items-center justify-center rounded-full text-xs shadow-sm transition-all hover:scale-105"
         style={{
           background: "var(--bg-panel)",
           border: "1px solid var(--border)",
@@ -33,7 +33,7 @@ export function BlockAdder({ onAdd }: BlockAdderProps) {
         <>
           <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
           <div
-            className="animate-fade-in absolute left-6 top-6 z-40 w-44 rounded-xl border py-1 shadow-xl"
+            className="animate-fade-in absolute left-1/2 top-7 z-40 w-48 max-w-[calc(100vw-16px)] -translate-x-1/2 rounded-2xl border py-1 shadow-xl"
             style={{
               background: "var(--bg-panel)",
               borderColor: "var(--border)",
