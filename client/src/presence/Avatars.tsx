@@ -1,7 +1,6 @@
 import type { CSSProperties } from "react"
 import type { Awareness } from "@syncweave/crdt"
 
-/** Stacked avatar bubbles for everyone currently in the room. */
 export function Avatars({ awareness }: { awareness: Awareness }) {
   const states = [...awareness.getRemoteStates().values()]
   const me = awareness.getLocalUpdate().state

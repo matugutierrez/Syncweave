@@ -14,15 +14,6 @@ interface Client {
   name: string
 }
 
-/**
- * A Room is the authoritative relay for a single document.
- *
- * The server is intentionally "dumb": it does not need to understand the CRDT
- * semantics, only to (1) persist every operation it sees, (2) replay history
- * to newcomers based on their version vector, and (3) broadcast new operations
- * and presence to everyone else. Convergence is guaranteed by the CRDT itself,
- * so the server never has to resolve conflicts.
- */
 export class Room {
   private readonly clients = new Set<Client>()
   private readonly version = new VersionVector()
@@ -48,7 +39,6 @@ export class Room {
 
   remove(client: Client): void {
     this.clients.delete(client)
-    // Tell peers this client's presence is gone.
     this.broadcast(
       encode({
         t: "awareness",
@@ -64,7 +54,6 @@ export class Room {
     return this.clients.size === 0
   }
 
-  /** Send the catch-up operations a joining client is missing. */
   sync(client: Client, remoteVV: Record<ClientID, number>): void {
     const remote = VersionVector.fromJSON(remoteVV)
     const missing = this.history.filter(
@@ -75,7 +64,6 @@ export class Room {
     )
   }
 
-  /** Ingest operations from a client: dedupe, persist, broadcast. */
   ingest(ops: Operation[], from: Client): void {
     const fresh: Operation[] = []
     for (const op of ops) {
@@ -102,7 +90,6 @@ export class Room {
     }
   }
 
-  /** Flush newly received ops to disk. Returns the count persisted. */
   async flush(): Promise<number> {
     if (this.dirty.length === 0) return 0
     const batch = this.dirty

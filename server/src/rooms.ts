@@ -1,7 +1,6 @@
 import { Room } from "./room"
 import type { Persistence } from "./persistence"
 
-/** Lazily-created registry of live rooms keyed by document id. */
 export class RoomRegistry {
   private readonly rooms = new Map<string, Room>()
 

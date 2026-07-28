@@ -10,23 +10,11 @@ import { config } from "@/config"
 
 export type ConnectionStatus = "connecting" | "online" | "offline"
 
-/**
- * WebsocketProvider — binds a {@link CRDTDocument} to the sync server.
- *
- * Responsibilities:
- *  - Establish/maintain the socket with exponential-backoff reconnection.
- *  - Perform an initial sync handshake (send our version vector, receive the
- *    ops we are missing).
- *  - Forward local ops to the server and apply remote ops to the document.
- *  - Queue ops produced while offline and flush them on reconnect.
- *  - Relay awareness (presence) updates.
- */
 export class WebsocketProvider {
   private socket: WebSocket | null = null
   private status: ConnectionStatus = "connecting"
   private backoff = 500
   private readonly maxBackoff = 15_000
-  /** Ops produced locally that haven't been acknowledged/sent yet. */
   private outbox: Operation[] = []
   private readonly statusListeners = new Set<(s: ConnectionStatus) => void>()
   private awarenessTimer: number | null = null
@@ -38,7 +26,6 @@ export class WebsocketProvider {
     private readonly awareness: Awareness,
     private readonly name: string = "Anonymous",
   ) {
-    // Capture every local op for sending (and offline queueing).
     this.doc.onChange((ops) => {
       this.outbox.push(...ops.filter((o) => o.id.client === this.doc.clientID))
       this.flushOutbox()
@@ -47,7 +34,6 @@ export class WebsocketProvider {
     this.connect()
   }
 
-  // ----- connection lifecycle --------------------------------------------
 
   private connect(): void {
     if (this.disposed) return
@@ -86,7 +72,6 @@ export class WebsocketProvider {
     window.setTimeout(() => this.connect(), delay)
   }
 
-  // ----- messaging --------------------------------------------------------
 
   private handle(msg: Message): void {
     switch (msg.t) {
@@ -153,7 +138,6 @@ export class WebsocketProvider {
     }
   }
 
-  // ----- status -----------------------------------------------------------
 
   private setStatus(status: ConnectionStatus): void {
     if (this.status === status) return

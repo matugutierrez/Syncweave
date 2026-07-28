@@ -1,14 +1,5 @@
 import { type ID, idCompare, idEquals, idToString } from "./id"
 import type { JSONValue, InsertOp, DeleteOp } from "./operations"
-
-/**
- * A single node in the sequence CRDT.
- *
- * Items form a doubly-linked list. Deleted items are kept as tombstones so
- * that concurrent operations referencing them (by origin) still integrate
- * deterministically. `originLeft`/`originRight` capture the *causal* neighbours
- * at insertion time, which is what YATA's integration rule needs.
- */
 export interface Item {
   id: ID
   originLeft: ID | null
@@ -19,20 +10,8 @@ export interface Item {
   right: Item | null
 }
 
-/**
- * SequenceCRDT — a YATA (Yet Another Transformation Approach) ordered sequence,
- * the same family of algorithm Yjs uses.
- *
- * The hard part is `integrate`: when two clients insert between the same two
- * neighbours concurrently, every replica must pick the SAME final order. YATA
- * achieves this by scanning the run of conflicting items and using the origin
- * relationships plus a total order on ids to decide where the new item lands
- * — with no central coordinator and no transformation of operations.
- */
 export class SequenceCRDT {
-  /** All items by id (including tombstones), for O(1) origin lookups. */
   private readonly items = new Map<string, Item>()
-  /** Sentinel head; real items start at head.right. */
   private readonly head: Item
 
   constructor() {
@@ -52,10 +31,6 @@ export class SequenceCRDT {
     return this.items.get(idToString(id)) ?? null
   }
 
-  /**
-   * Integrate a remote or local insert. This is the convergence-critical
-   * routine. Idempotent: re-applying a known op is a no-op.
-   */
   integrateInsert(op: InsertOp): void {
     if (this.items.has(idToString(op.id))) return // already integrated
 
@@ -72,8 +47,6 @@ export class SequenceCRDT {
       right: null,
     }
 
-    // Scan candidate position between (left, right), resolving concurrent
-    // inserts that share an origin using the YATA rule.
     let scan = left ? left.right : this.head.right
     let dest = left
 
@@ -81,19 +54,15 @@ export class SequenceCRDT {
       const scanOriginLeft = this.get(scan.originLeft)
       const scanOriginRight = this.get(scan.originRight)
 
-      // Item's origin is to the left of scan's origin → we must insert before.
       if (this.precedesOrigin(left, scanOriginLeft)) {
         break
       }
 
       if (idEquals(scan.originLeft, op.originLeft)) {
-        // Same left origin: break ties by id total order.
         if (idCompare(scan.id, op.id) > 0) {
           break
         }
-        // Equal right origin region — keep scanning past smaller ids.
         if (idEquals(scan.originRight, op.originRight) === false) {
-          // continue scanning
         }
       }
 
@@ -105,14 +74,9 @@ export class SequenceCRDT {
     this.items.set(idToString(item.id), item)
   }
 
-  /**
-   * True if origin `a` strictly precedes origin `b` in the current list.
-   * Used to decide when a scanned item belongs to a different insertion slot.
-   */
   private precedesOrigin(a: Item | null, b: Item | null): boolean {
     if (b === null) return false
     if (a === null) return true
-    // Walk right from a; if we reach b, a precedes b.
     let cur: Item | null = a.right
     while (cur) {
       if (cur === b) return true
@@ -130,13 +94,11 @@ export class SequenceCRDT {
     if (next) next.left = item
   }
 
-  /** Apply a delete op by tombstoning the referenced item. Idempotent. */
   integrateDelete(op: DeleteOp): void {
     const item = this.get(op.ref)
     if (item) item.deleted = true
   }
 
-  /** Materialize the visible (non-tombstoned) content as an array. */
   toArray(): JSONValue[] {
     const out: JSONValue[] = []
     let cur = this.head.right
@@ -147,7 +109,6 @@ export class SequenceCRDT {
     return out
   }
 
-  /** Visible content as a string (assumes single-char string content). */
   toString(): string {
     let s = ""
     let cur = this.head.right
@@ -158,7 +119,6 @@ export class SequenceCRDT {
     return s
   }
 
-  /** The id of the visible item at index `i`, or null. Used for local edits. */
   visibleIdAt(index: number): ID | null {
     let cur = this.head.right
     let i = 0
@@ -172,12 +132,6 @@ export class SequenceCRDT {
     return null
   }
 
-  /**
-   * Resolve the (originLeft, originRight) pair for a local insertion at a
-   * given visible index. originLeft is the visible item before the index;
-   * originRight is the next item (visible or not) so concurrent inserts share
-   * a stable right anchor.
-   */
   originsForIndex(index: number): { left: ID | null; right: ID | null } {
     let cur = this.head.right
     let prev: Item | null = null

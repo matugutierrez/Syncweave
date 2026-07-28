@@ -5,24 +5,14 @@ import {
   opDependencies,
 } from "./operations"
 
-/**
- * Causal operation log.
- *
- * Networks reorder and duplicate messages. The op log guarantees **causal
- * delivery**: an operation is only handed to the document once every operation
- * it depends on has been applied. Out-of-order ops are buffered until their
- * dependencies arrive, then released transitively.
- */
 export class OpLog {
   private readonly version = new VersionVector()
   private readonly applied = new Set<string>()
-  /** Buffered ops waiting on a missing dependency id-string. */
   private readonly pending = new Map<string, Operation[]>()
   private readonly history: Operation[] = []
 
   constructor(private readonly onReady: (op: Operation) => void) {}
 
-  /** True if this operation has already been integrated. */
   private isApplied(id: ID): boolean {
     return this.applied.has(idToString(id)) || this.version.has(id.client, id.clock)
   }
@@ -34,7 +24,6 @@ export class OpLog {
     return null
   }
 
-  /** Receive an operation (local or remote) and release it when causally ready. */
   receive(op: Operation): void {
     if (this.isApplied(op.id)) return
 
@@ -58,7 +47,6 @@ export class OpLog {
     this.onReady(op)
   }
 
-  /** A new op just landed; see if it unblocks anything waiting on it. */
   private drainPending(justApplied: ID): void {
     const key = idToString(justApplied)
     const waiters = this.pending.get(key)
@@ -75,7 +63,6 @@ export class OpLog {
     }
   }
 
-  /** Operations the peer is missing, given their version vector. */
   operationsSince(remote: VersionVector): Operation[] {
     return this.history.filter(
       (op) => !remote.has(op.id.client, op.id.clock),

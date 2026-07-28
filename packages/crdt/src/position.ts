@@ -1,15 +1,3 @@
-/**
- * Fractional indexing.
- *
- * Generates an order key strictly between two existing keys without ever
- * needing to rebalance siblings. Used to order block-level nodes (paragraphs,
- * shapes) in the document tree. Between any two keys you can always mint a new
- * one, so concurrent inserts at the "same" slot never collide — they just get
- * different fractional keys and are then tie-broken by client id.
- *
- * Implementation follows the base-62 approach popularized by Figma.
- */
-
 const DIGITS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 const BASE = DIGITS.length
 
@@ -17,10 +5,6 @@ function midDigit(a: number, b: number): number {
   return Math.floor((a + b) / 2)
 }
 
-/**
- * Returns a key `k` such that `a < k < b` in lexicographic order.
- * `a` may be "" (start sentinel) and `b` may be null (end sentinel).
- */
 export function generateKeyBetween(
   a: string | null,
   b: string | null,
@@ -51,13 +35,11 @@ export function generateKeyBetween(
       return result
     }
 
-    // Digits are adjacent: keep the low digit and descend one level deeper.
     result += DIGITS[lowDigit]!
     i += 1
   }
 }
 
-/** Generate `n` evenly spaced keys between `a` and `b`. */
 export function generateNKeysBetween(
   a: string | null,
   b: string | null,

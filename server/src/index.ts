@@ -29,7 +29,6 @@ async function main(): Promise<void> {
   })
   app.get("/health", (_req, res) => res.json({ ok: true }))
 
-  // Document management routes
   app.use("/api/documents", documentRouter)
 
   const server = http.createServer(app)
@@ -111,7 +110,6 @@ async function main(): Promise<void> {
     })
   })
 
-  // Periodically persist dirty rooms.
   setInterval(() => {
     for (const room of registry.all()) void room.flush()
   }, config.snapshotIntervalMs)

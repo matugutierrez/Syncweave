@@ -1,14 +1,5 @@
 import type { CRDTDocument, Operation } from "@syncweave/crdt"
 
-/**
- * Offline-first local persistence.
- *
- * Every operation the document produces or receives is appended to an
- * IndexedDB object store keyed by room. On startup we replay the local log so
- * the user sees their document instantly — even with no network — and any
- * edits made while offline are preserved and later flushed to the server by
- * the WebSocket provider.
- */
 export class IndexedDBPersistence {
   private db: IDBDatabase | null = null
   private readonly storeName = "operations"
@@ -23,7 +14,6 @@ export class IndexedDBPersistence {
     const ops = await this.loadAll()
     if (ops.length > 0) this.doc.applyRemote(ops)
 
-    // Persist everything the document emits from now on.
     this.doc.onChange((newOps) => {
       void this.append(newOps)
     })

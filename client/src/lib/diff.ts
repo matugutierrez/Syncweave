@@ -1,9 +1,3 @@
-/**
- * Minimal text diff between the previous and next value of a contenteditable
- * block, reduced to a single (deleteAt, deleteCount, insertAt, insertText)
- * change. This is enough to translate DOM input events into CRDT operations
- * for the common typing/deletion/paste cases.
- */
 export interface TextChange {
   index: number
   removed: string

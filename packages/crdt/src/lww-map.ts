@@ -6,15 +6,6 @@ interface Register {
   ts: Timestamp
 }
 
-/**
- * A Last-Write-Wins map (LWW-Element-Map).
- *
- * Each key holds a register carrying the value and the HLC timestamp of the
- * write that produced it. On conflict the higher timestamp wins, with ties
- * broken deterministically by client id — so all replicas converge regardless
- * of delivery order. Used for block attributes (formatting, shape geometry,
- * colors, etc.).
- */
 export class LWWMap {
   private readonly registers = new Map<string, Register>()
 
